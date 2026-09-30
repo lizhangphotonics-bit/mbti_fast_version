@@ -140,7 +140,7 @@
             isfp: { name: "ISFP 探险家", tag: "【内敛的艺术家】", pros: "拥有极高的审美天赋。你温和、友善，不随波逐流，用心感受生活中的每一个美好，追求真善美。", cons: "面对冲突和压力时容易选择逃避。为了守护你珍视的事物，你需要培养一些面对困难的勇气。", best: "ESFJ 执政官：他们会帮你打理好世俗的一切，让你安心做自己。", learn: "ENTJ 指挥官：学习他们直面困难、遇神杀神的强悍气场。" },
             estp: { name: "ESTP 企业家", tag: "【活力四射的实干派】", pros: "行动力极强，胆大心细。能在复杂的环境中迅速捕捉到机遇，热爱挑战，在现实生活中混得如鱼得水。", cons: "习惯追求眼前的刺激，缺乏对长远未来的深度规划。培养一些耐心和战略眼光，你会飞得更高。", best: "ISTJ 物流师：最稳固的大后方，能帮你规避风险、收拾烂摊子。", learn: "INFJ 提倡者：学习他们透过表象看本质的深刻思想维度。" },
             esfp: { name: "ESFP 表演者", tag: "【闪耀的舞台中心】", pros: "极致的乐天派，充满艺术细胞。只要有你在，空气中都弥漫着快乐的味道。你能够轻松化解尴尬，照亮他人。", cons: "容易被新鲜事物吸引，有时会逃避深刻或严肃的话题。尝试为自己设定一些长期的小目标，让快乐更踏实。", best: "ISFJ 守卫者：最温暖的避风港，无限包容你的任性并照顾你。", learn: "INTP 逻辑学家：学习他们深邃的逻辑思考和耐得住寂寞的定力。" }
-        ],
+        },
         it: {
             intj: { name: "INTJ Architetto", tag: "[Lo Stratega Riflessivo]", pros: "Hai una grande visione a lungo termine. Cogli l'essenza delle cose e crei soluzioni altamente efficienti.", cons: "A volte ignori le emozioni altrui. Prova ad accogliere i momenti emotivi della vita per trovare un nuovo equilibrio.", best: "ENTP Argomentatore: Le vostre menti brillanti si stimolano a vicenda generando idee uniche.", learn: "ESFJ Console: Il loro calore umano ti insegna a connetterti meglio con le emozioni." },
             intp: { name: "INTP Logico", tag: "[L'Esploratore della Verità]", pros: "Sei molto creativo e curioso. Pensi fuori dagli schemi e offri sempre punti di vista unici e profondi.", cons: "Fai fatica a mettere in pratica le idee. Prova a dividere i grandi obiettivi in piccoli passi quotidiani.", best: "ENTJ Comandante: La loro forza esecutiva trasforma le tue idee geniali in realtà.", learn: "ESFP Intrattenitore: Impara da loro come goderti il momento presente con leggerezza." },
@@ -230,7 +230,7 @@
     }
 
     function buildScoreRow(leftLabel, rightLabel, leftScore, rightScore) {
-        let total = 5; // 每组5题
+        let total = 5; 
         let pctLeft = Math.round((leftScore / total) * 100);
         let pctRight = 100 - pctLeft;
         return `
@@ -251,7 +251,6 @@
         let char = results[currentLang][mbtiStr];
         let ui = uiStr[currentLang];
         
-        // 生成进度条HTML
         let barsHtml = "";
         if (currentLang === 'zh') {
             barsHtml += buildScoreRow('E (外向)', 'I (内向)', scores['E'], scores['I']);
