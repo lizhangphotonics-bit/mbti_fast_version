@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MBTI 灵魂底色测试 - 温和版</title>
+    <style>
+        :root {
+            --primary: #6366F1; /* 柔和的靛蓝色 */
+            --bg: #F8FAFC;
+            --card-bg: #FFFFFF;
+            --text: #334155;
+            --bar-bg: #E2E8F0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #app {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 550px;
+            padding: 35px 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            position: relative;
+        }
+        h1 { font-size: 24px; margin-bottom: 12px; color: #0F172A; text-align: center; }
+        p.desc { color: #64748B; margin-bottom: 25px; line-height: 1.7; font-size: 15px; text-align: center; }
+        
+        .progress-container { width: 100%; background: var(--bar-bg); border-radius: 10px; height: 8px; margin-bottom: 25px; overflow: hidden; display: none; }
+        .progress-bar { height: 100%; background: var(--primary); width: 0%; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        .option-btn {
+            display: block;
+            width: 100%;
+            padding: 18px 20px;
+            margin-bottom: 15px;
+            background: var(--card-bg);
+            border: 2px solid var(--bar-bg);
+            border-radius: 14px;
+            font-size: 16px;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+            line-height: 1.5;
+        }
+        .option-btn:hover { border-color: var(--primary); background: #EEF2FF; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1); }
+        
+        .result-header { text-align: center; margin-bottom: 20px; }
+        .result-title { color: var(--primary); font-size: 36px; font-weight: 800; margin-bottom: 8px; letter-spacing: 1px; }
+        .result-tag { font-weight: bold; font-size: 18px; color: #10B981; margin-bottom: 20px; }
+        
+        .result-box { text-align: left; background: #F8FAFC; padding: 20px; border-radius: 16px; margin-bottom: 15px; font-size: 15px; line-height: 1.7; border: 1px solid #E2E8F0; }
+        
+        /* 改为温暖的成长指南配色 */
+        .result-box.guide { background: #ECFDF5; border-color: #A7F3D0; color: #065F46; }
+        
+        .result-box strong { display: inline-block; margin-bottom: 6px; font-size: 16px; }
+        
+        .match-container { display: flex; gap: 10px; margin-bottom: 15px; }
+        .match-box { flex: 1; padding: 15px; border-radius: 12px; font-size: 14px; line-height: 1.5; text-align: center; }
+        .match-best { background: #FFF7ED; border: 1px solid #FED7AA; color: #9A3412; }
+        .match-worst { background: #F1F5F9; border: 1px solid #CBD5E1; color: #475569; }
+        .match-title { font-weight: bold; font-size: 15px; margin-bottom: 5px; display: block;}
+        
+        #restart-btn { background: var(--primary); color: white; border: none; padding: 16px 28px; border-radius: 14px; cursor: pointer; margin-top: 15px; font-size: 16px; width: 100%; font-weight: bold; transition: background 0.2s; }
+        #restart-btn:hover { background: #4F46E5; }
+    </style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+    let scores = { E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J: 0, P: 0 };
+    
+    // 题目保持不变，因为是用于区分MBTI维度的经典情境
+    const questions = [
+        { q: "经历了一周的高压工作，周末你会如何给自己“蓄电”？", opts: [{ text: "A. 和朋友相聚，去热闹的地方感受生活气息", type: "E" }, { text: "B. 享受独处时光，在家安静地看书追剧或休息", type: "I" }] },
+        { q: "听别人讲述一件事情时，你更倾向于：", opts: [{ text: "A. 希望对方先说明具体的细节和清晰的事实", type: "S" }, { text: "B. 希望对方先讲出整体的脉络和背后的深意", type: "N" }] },
+        { q: "朋友遇到感情挫折向你倾诉，你的第一反应是：", opts: [{ text: "A. 理性地帮TA分析问题所在，寻找解决办法", type: "T" }, { text: "B. 先给予TA情感上的支持和安慰，陪TA度过难关", type: "F" }] },
+        { q: "计划一次期待已久的旅行，你的常态是：", opts: [{ text: "A. 提前做好详细的攻略，安排好每天的行程", type: "J" }, { text: "B. 只定大概方向，享受旅途中未知的惊喜和随机性", type: "P" }] },
+        { q: "参加一个有许多陌生人的聚会，你通常：", opts: [{ text: "A. 容易融入环境，主动与新朋友交流互动", type: "E" }, { text: "B. 倾向于和熟悉的几个人聊天，或者安静地倾听", type: "I" }] },
+        { q: "买了一个复杂的新电子产品，开箱后你倾向于：", opts: [{ text: "A. 仔细阅读说明书，按照步骤稳妥地设置", type: "S" }, { text: "B. 凭直觉直接上手探索，边玩边弄懂怎么用", type: "N" }] },
+        { q: "当你在工作中收到反馈时，你内心更容易在意：", opts: [{ text: "A. 对方的建议是否客观、准确且有建设性？", type: "T" }, { text: "B. 对方沟通时的态度是否尊重且友善？", type: "F" }] },
+        { q: "面对下周一要交的重要任务，你的工作节奏是：", opts: [{ text: "A. 提前规划进度，留出充裕的缓冲时间", type: "J" }, { text: "B. 倾向于在最后期限的压力下，激发最大的潜能", type: "P" }] },
+        { q: "遇到极其开心或有趣的事情，你习惯：", opts: [{ text: "A. 乐于第一时间和大家分享，传递快乐", type: "E" }, { text: "B. 默默在心里回味，或者只分享给最亲密的人", type: "I" }] },
+        { q: "关于思考方式，你觉得自己更符合哪种描述？", opts: [{ text: "A. 稳扎稳打：喜欢基于现实经验，一步步解决问题", type: "S" }, { text: "B. 灵光乍现：喜欢思考未来的可能性，脑洞大开", type: "N" }] },
+        { q: "你认为构建一个更好的社会，更需要什么？", opts: [{ text: "A. 公平公正的规则、理性的秩序和清晰的逻辑", type: "T" }, { text: "B. 更多的宽容、人情味、同理心和互助精神", type: "F" }] },
+        { q: "打开你的电脑桌面或生活空间，最有可能看到的是：", opts: [{ text: "A. 物品分门别类，井然有序，找东西很方便", type: "J" }, { text: "B. 带有个人风格的随性摆放，虽然有点乱但自己能找到", type: "P" }] },
+        { q: "如果遇到解不开的心结，你会怎么处理？", opts: [{ text: "A. 找人倾诉，在交流和探讨的过程中理清思路", type: "E" }, { text: "B. 独自沉淀，倾向于在内心深处慢慢消化和想通", type: "I" }] },
+        { q: "一个人发呆畅想时，你脑子里通常在想什么？", opts: [{ text: "A. 现实生活中的具体安排，比如接下来的工作或计划", type: "S" }, { text: "B. 天马行空的创意，或者是某些抽象的概念和故事", type: "N" }] },
+        { q: "面临职业选择等重大人生决定时，你最终往往：", opts: [{ text: "A. 审慎评估客观利弊，做出最合理的计算", type: "T" }, { text: "B. 听从内心的声音，选择最符合自己价值观和热爱的", type: "F" }] },
+        { q: "原本安排好的日程突然被取消了，你倾向于觉得：", opts: [{ text: "A. 有些失落或不安，因为既定的计划被打乱了", type: "J" }, { text: "B. 感到轻松自在，正好可以利用这片自由的时间", type: "P" }] },
+        { q: "理想的办公环境，你更偏好哪一种？", opts: [{ text: "A. 充满活力的开放空间，方便随时交流和头脑风暴", type: "E" }, { text: "B. 安静独立的个人空间，能够深度专注、不被打扰", type: "I" }] },
+        { q: "与人交流时，你更欣赏哪种表达方式？", opts: [{ text: "A. 务实直白，用具体的数据和客观事实说话", type: "S" }, { text: "B. 富有想象力，使用巧妙的比喻或探讨宏大的概念", type: "N" }] },
+        { q: "在团队协作中，你最希望自己被认可为：", opts: [{ text: "A. 能力出众、逻辑清晰、非常靠谱的人", type: "T" }, { text: "B. 善解人意、好相处、充满人格魅力的人", type: "F" }] },
+        { q: "如果让你带领团队，你更倾向于的方式是：", opts: [{ text: "A. 设定明确的目标和清晰的流程，确保进度可控", type: "J" }, { text: "B. 把握大方向，给予成员极大的自由度去灵活发挥", type: "P" }] }
+    ];
+
+    // 16型人格图鉴 (温和疗愈版)
+    const mbtiData = {
+        intj: { 
+            name: "INTJ 建筑师", tag: "【深思熟虑的战略家，独立的思想者】", 
+            pros: "拥有卓越的洞察力和长远的大局观。你能迅速看透复杂事物的本质，并制定出极其高效的解决方案。你独立、理智，是团队中最可靠的智囊和灯塔。", 
+            cons: "因为过于注重逻辑和效率，有时可能会不小心忽略了身边人的情感需求。试着偶尔放下完美的标准，接纳生活中的小意外和感性时刻，你会发现这个世界柔软的一面同样美丽。", 
+            bestFriend: "ENTP (相互启发的灵魂伴侣)", enemy: "ESFJ (试着理解他们对细节的关心)" 
+        },
+        intp: { 
+            name: "INTP 逻辑学家", tag: "【追求真理的探索者，宇宙的观察员】", 
+            pros: "你的内心是一个丰富且充满奇思妙想的宇宙。你极具创造力，能够跳出框架思考问题。你包容且开放，对世界充满纯粹的好奇心，总能提出独到的见解。", 
+            cons: "因为思维过于活跃，有时很难将绝妙的想法付诸实践。试着把宏大的目标拆解成每天可以完成的小步骤，你的才华需要一个落地的支点，世界期待看到你的成果。", 
+            bestFriend: "ENTJ (能帮你将想法落地的实干家)", enemy: "ESFP (可以向他们学习享受当下的快乐)" 
+        },
+        entj: { 
+            name: "ENTJ 指挥官", tag: "【天生的破浪者，无畏的领航员】", 
+            pros: "充满自信和决断力，面对困难从不退缩。你极具领导才能，擅长统筹全局，能够带领团队高效地达成目标，是大家极其信任的破局者和领路人。", 
+            cons: "在冲锋陷阵时，偶尔会因为太看重结果而显得有些严厉和急躁。适当放慢脚步，多倾听团队成员的反馈与情感，刚柔并济会让你成为更有温度、更有魅力的领袖。", 
+            bestFriend: "INTP (能为你提供无尽智慧的军师)", enemy: "ISFP (试着欣赏他们佛系平和的生活态度)" 
+        },
+        entp: { 
+            name: "ENTP 辩论家", tag: "【灵感爆棚的创变者，思维的火花】", 
+            pros: "聪明睿智，思维极其敏捷。你总能从独特的角度看问题，勇敢地挑战传统。你极具感染力，能在绝境中找到新的生机，是不可多得的创新型人才。", 
+            cons: "兴趣广泛是你的天赋，但也容易让你难以在某一件事情上坚持到底。培养一点耐心，把那些绝妙的点子坚持做完，你会取得令人惊叹的成就。", 
+            bestFriend: "INFJ (能看懂你内心深度的知己)", enemy: "ISFJ (可以向他们学习如何建立生活的秩序)" 
+        },
+        infj: { 
+            name: "INFJ 提倡者", tag: "【温暖的灵魂伴侣，理想的守护者】", 
+            pros: "拥有极其敏锐的直觉和深沉的同理心。你总能察觉到他人的情绪，并给予最真诚的慰藉。你有崇高的理想，并愿意为了心中的美好世界默默奉献你的光和热。", 
+            cons: "太容易吸收外界的情绪，常常为了照顾别人而委屈自己，导致内心疲惫。请一定记住，你的能量也很宝贵，先好好爱自己，才能更好地去爱这个世界。", 
+            bestFriend: "ENFP (能治愈你精神内耗的小太阳)", enemy: "ESTP (试着理解他们简单直接的务实)" 
+        },
+        infp: { 
+            name: "INFP 调停者", tag: "【温柔的治愈系，诗意的造梦师】", 
+            pros: "内心世界如诗如画，拥有极致的共情能力和艺术天赋。你善良、真诚，总是用温柔的眼光看待世界，能够敏锐地发现生活中那些容易被忽略的美好。", 
+            cons: "面对现实的压力和冲突时，有时会习惯性地退缩到自己的精神角落。试着勇敢地表达自己的真实想法，你的声音非常有力量，世界需要你的温柔与坚韧。", 
+            bestFriend: "ENFJ (你的专属守护骑士)", enemy: "ESTJ (可以向他们学习如何更果断地处理事务)" 
+        },
+        enfj: { 
+            name: "ENFJ 主人公", tag: "【充满激情的引导者，成长的赋能者】", 
+            pros: "天生的人际交往专家，极具亲和力和感染力。你总是真诚地关心他人，善于发现别人身上的潜能，并热心地帮助大家共同成长，是团队里不可或缺的灵魂人物。", 
+            cons: "常常把别人的需求置于自己之上，过于在意他人的评价而让自己感到疲惫。学会划定界限，接受自己不需要讨好所有人，偶尔的“自私”是对自己最好的保护。", 
+            bestFriend: "INFP (唯一懂你太阳背后疲惫的人)", enemy: "ISTP (试着理解他们喜欢独处的自由边界)" 
+        },
+        enfp: { 
+            name: "ENFP 竞选者", tag: "【自由的灵魂，传递快乐的精灵】", 
+            pros: "热情洋溢，充满活力与好奇心。你的存在就像是一束阳光，总能给周围的人带来无尽的快乐和灵感。你拥抱无限的可能性，生活因为你而充满色彩。", 
+            cons: "因为对世间万物都充满兴趣，有时容易分散精力，难以在一个领域深耕。学会在众多选项中做出取舍，建立一点日常的专注力，会让你的才华绽放得更长久。", 
+            bestFriend: "INTJ (能帮你理清思路的沉稳后盾)", enemy: "ISTJ (可以向他们借一点持之以恒的毅力)" 
+        },
+        istj: { 
+            name: "ISTJ 物流师", tag: "【稳如泰山的守护者，秩序的基石】", 
+            pros: "极度负责任，踏实可靠。你有着极强的契约精神和专注力，只要交到你手里的任务，都能有条不紊、高质量地完成。你是社会和家庭最坚实的依靠。", 
+            cons: "习惯了既定的规则和习惯，有时会对未知的变化感到不安。试着偶尔跳出舒适区，接纳一点生活中的随机性和不完美，你会发现意想不到的惊喜。", 
+            bestFriend: "ESTP (能带你体验新鲜事物的活力源泉)", enemy: "ENFP (试着欣赏他们天马行空的创造力)" 
+        },
+        isfj: { 
+            name: "ISFJ 守卫者", tag: "【细心体贴的照顾者，温暖的避风港】", 
+            pros: "极其细心且富有同情心，总是默默在背后支持和照顾着大家。你记性极好，能记住身边人的每一个小喜好，用实际行动传递着最深沉的爱意和安全感。", 
+            cons: "太过习惯于默默付出，常常忽略了自己的需求，委屈也喜欢自己扛。请学会大声说出你的渴望，也学会拒绝那些不合理的要求，你的善良需要带点力量。", 
+            bestFriend: "ESFP (能带你走出舒适圈去享受当下)", enemy: "ENTP (试着理解他们打破常规的探索精神)" 
+        },
+        estj: { 
+            name: "ESTJ 总经理", tag: "【高效的实干家，可靠的秩序建立者】", 
+            pros: "务实、果断，极具组织和管理天赋。你能迅速理清混乱的局面，建立高效的规则和系统。你言出必行，是能够带领大家在现实中稳扎稳打拿到结果的人。", 
+            cons: "在注重结果和效率的同时，有时可能会忽略过程中的人情味。多给身边的人一些耐心和鼓励，学会倾听不同的声音，你的团队会更加紧密且有战斗力。", 
+            bestFriend: "ISTP (配合默契、不废话的完美搭档)", enemy: "INFP (试着展现你柔软和富有同情心的一面)" 
+        },
+        esfj: { 
+            name: "ESFJ 执政官", tag: "【热心肠的连接者，永远的支持站】", 
+            pros: "热情好客，极具责任心。你是人际网络中的核心枢纽，总是尽心尽力地维护着团队的和谐与快乐。你乐于助人，让身边的每一个人都感到被重视和温暖。", 
+            cons: "过于渴望得到他人的认可，有时会因为别人的评价而患得患失。建立更强大的内在核心自信，你要知道，你的价值不取决于别人的赞美，你本身就很棒。", 
+            bestFriend: "ISFP (喜欢保护他们安静的岁月静好)", enemy: "INTJ (可以向他们学习如何保持独立和客观)" 
+        },
+        istp: { 
+            name: "ISTP 鉴赏家", tag: "【冷静的解题高手，从容的体验派】", 
+            pros: "动手能力极强，遇事冷静且极其务实。你能在危机中保持清醒，迅速找到最有效的解决路径。你不受条条框框的束缚，活在当下，洒脱而自由。", 
+            cons: "过于追求自由和个人空间，有时会让关心你的人觉得有些距离感。尝试在亲密关系中多一些情感的表达，让他们知道你冷酷外表下的在乎与温暖。", 
+            bestFriend: "ESTJ (能为你提供清晰目标的靠谱盟友)", enemy: "ENFJ (试着接纳他们带来的热情与情感联结)" 
+        },
+        isfp: { 
+            name: "ISFP 探险家", tag: "【内敛的艺术家，平和的生活美学家】", 
+            pros: "拥有极高的审美天赋和极其包容的性格。你温和、友善，不随波逐流，用心感受生活中的每一个细微的美好，内心深处有着对真善美的坚定追求。", 
+            cons: "面对冲突和巨大的压力时，容易选择退让或逃避。为了守护你珍视的事物和梦想，你需要培养一些面对困难的勇气和解决问题的决心，相信你自己的力量。", 
+            bestFriend: "ESFJ (帮你打理人际，让你安心做自己)", enemy: "ENTJ (可以向他们借一点直面挑战的果敢)" 
+        },
+        estp: { 
+            name: "ESTP 企业家", tag: "【活力四射的实干派，无畏的破局者】", 
+            pros: "行动力极强，胆大心细。你能在复杂的环境中迅速捕捉到机遇，极具谈判技巧和人格魅力。你热爱挑战，永远能在现实生活中混得如鱼得水，充满生命力。", 
+            cons: "习惯了追求眼前的刺激和短期的收益，有时缺乏对长远未来的深度规划。培养一些耐心和战略眼光，你的才华足以让你在更高、更远的地方闪耀。", 
+            bestFriend: "ISTJ (能帮你理清细节、稳固后方的战友)", enemy: "INFJ (试着停下来倾听一下他们深刻的思想)" 
+        },
+        esfp: { 
+            name: "ESFP 表演者", tag: "【闪耀的舞台中心，纯粹的快乐制造机】", 
+            pros: "极致的乐天派，充满艺术细胞。只要有你在，空气中都弥漫着快乐的味道。你热情大方，极具感染力，能够轻松化解尴尬，让所有人都享受当下的美好。", 
+            cons: "容易被新鲜事物吸引而分散注意力，有时会下意识地逃避深刻或严肃的话题。尝试在享受生活的同时，为自己设定一些长期的小目标，这会让你的快乐更加踏实。", 
+            bestFriend: "ISFJ (默默包容并照顾你的温暖港湾)", enemy: "INTP (试着去理解一下他们复杂的逻辑世界)" 
+        }
+    };
+
+    let app = document.getElementById('app');
+    let totalQuestions = questions.length;
+
+    function renderWelcome() {
+        app.innerHTML = `
+            <div class="result-header">
+                <div style="font-size: 55px; margin-bottom: 5px;">🌱</div>
+                <h1>MBTI 灵魂底色测试</h1>
+                <p class="desc">不用做一百道题，最快 1.5 分钟直击内心。<br>带你发现属于你的闪光点与成长之力。</p>
+            </div>
+            <button id="restart-btn" onclick="renderQuestion(0)">开启自我探索</button>
+        `;
+    }
+
+    function renderQuestion(index) {
+        if (index >= totalQuestions) {
+            calculateResult();
+            return;
+        }
+        
+        let progress = (index / totalQuestions) * 100;
+        let q = questions[index];
+        let html = `
+            <div class="progress-container" style="display: block;">
+                <div class="progress-bar" style="width: ${progress}%"></div>
+            </div>
+            <h1 style="text-align: left; font-size: 20px;">Q${index + 1}/${totalQuestions}</h1>
+            <p class="desc" style="text-align: left; font-size: 16px; color:#334155;">${q.q}</p>
+        `;
+        
+        q.opts.forEach((opt) => {
+            html += `<button class="option-btn" onclick="handleAnswer('${opt.type}', ${index})">${opt.text}</button>`;
+        });
+        app.innerHTML = html;
+    }
+
+    function handleAnswer(type, index) {
+        scores[type]++;
+        renderQuestion(index + 1);
+    }
+
+    function calculateResult() {
+        let result = "";
+        result += scores['E'] >= scores['I'] ? 'e' : 'i';
+        result += scores['S'] >= scores['N'] ? 's' : 'n';
+        result += scores['T'] >= scores['F'] ? 't' : 'f';
+        result += scores['J'] >= scores['P'] ? 'j' : 'p';
+        
+        showResult(result);
+    }
+
+    function showResult(mbtiStr) {
+        let char = mbtiData[mbtiStr];
+        app.innerHTML = `
+            <div class="result-header">
+                <div class="result-title">${char.name}</div>
+                <div class="result-tag">${char.tag}</div>
+            </div>
+            
+            <div class="result-box">
+                <strong>✨ 你的发光点：</strong><br>${char.pros}
+            </div>
+            
+            <div class="result-box guide">
+                <strong>🌱 成长的温柔建议：</strong><br>${char.cons}
+            </div>
+            
+            <div class="match-container">
+                <div class="match-box match-best">
+                    <span class="match-title">🤝 相互成就的搭档</span>
+                    ${char.bestFriend}
+                </div>
+                <div class="match-box match-worst">
+                    <span class="match-title">💡 值得学习的互补</span>
+                    ${char.enemy}
+                </div>
+            </div>
+            
+            <button id="restart-btn" onclick="resetGame()">再次测试</button>
+        `;
+    }
+
+    function resetGame() {
+        scores = { E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J: 0, P: 0 };
+        renderWelcome();
+    }
+
+    renderWelcome();
+
+</script>
+</body>
+</html>
